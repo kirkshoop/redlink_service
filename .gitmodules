@@ -1,0 +1,3 @@
+[submodule "ext/eventhubs-js"]
+	path = ext/eventhubs-js
+	url = https://github.com/ytechie/eventhubs-js.git

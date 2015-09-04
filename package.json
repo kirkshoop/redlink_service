@@ -1,0 +1,30 @@
+{
+  "name": "redlink-azure",
+  "version": "0.0.0",
+  "author": "Kirk Shoop",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "license": "",
+  "private": true,
+  "dependencies": {
+    "azure": "^0.10.6",
+    "crypto": "0.0.3",
+    "eventhubs-js": "./ext/eventhubs-js",
+    "rx": "^3.1.1",
+    "superagent": "^1.3.0",
+    "superagent-proxy": "^1.0.0",
+    "superagent-xml2jsparser": "^0.1.1",
+    "utf8": "^2.1.1"
+  },
+  "devDependencies": {
+    "babel": "^5.1.13"
+  },
+  "scripts": {
+    "build-debug": "babel src/server.js --source-maps --out-file server.js",
+    "watch-debug": "babel src/server.js --watch --source-maps --out-file server.js",
+    "build": "npm run build-debug",
+    "watch": "npm run watch-debug"
+  }
+}
