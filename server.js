@@ -41,7 +41,6 @@ _http2['default'].createServer(function (req, res) {
   res.end('Hello World\n');
 }).listen(port);
 
-//var SbConnectionString = process.env.SbConnectionString;
 var AppID = process.env.RlAppid;
 var AppAuth = process.env.RlAppAuth;
 var Username = process.env.RlUsername;
@@ -115,17 +114,6 @@ _eventhubsJs2['default'].init({
   sasToken: eventHubSasToken
 });
 
-//var serviceBusService = azure.createServiceBusService(SbConnectionString);
-/*
-var topicOptions = {
-        MaxSizeInMegabytes: '5120',
-        DefaultMessageTimeToLive: 'PT10M'
-    };
-
-var createTopicIfNotExists$ = Observable.fromNodeCallback(serviceBusService.createTopicIfNotExists, serviceBusService);
-var sendTopicMessage$ = Observable.fromNodeCallback(serviceBusService.sendTopicMessage, serviceBusService);
-*/
-
 var RedlinkApi = (function () {
   function RedlinkApi(AppId, AppAuth) {
     _classCallCheck(this, RedlinkApi);
@@ -182,8 +170,28 @@ var thermostat$ = function thermostat$(session$, period) {
             location[0].LocationInfo[0].Thermostats = undefined;
             return { location: location[0].LocationInfo[0], thermostat: thermostat[0].ThermostatInfo[0] };
           }).tap(function (thermostatAt) {
+            var location = thermostatAt.location;
+            var thermostat = thermostatAt.thermostat;
+            var UI = thermostat.UI[0];
+            var Fan = thermostat.Fan[0];
+            var Unit = UI.DisplayedUnits[0];
+            var message = {
+              create: UI.Created[0],
+              locationName: location.Name[0],
+              unit: Unit,
+              outdoorTemp: '' + Number(UI.OutdoorTemp[0]),
+              thermostatName: thermostat.UserDefinedDeviceName[0],
+              thermostatTemp: '' + Number(UI.DispTemperature[0]),
+              thermostatHumidity: UI.IndoorHumidity[0],
+              heatSetPoint: '' + Number(UI.HeatSetpoint[0]),
+              coolSetPoint: '' + Number(UI.CoolSetpoint[0]),
+              statusHeat: UI.StatusHeat[0],
+              statusCool: UI.StatusCool[0],
+              fanPosition: Fan.Position[0],
+              fanIsRunning: Fan.IsFanRunning[0]['$']['xsi:nil'] === "true"
+            };
             _eventhubsJs2['default'].sendMessage({
-              message: thermostatAt,
+              message: message,
               deviceId: thermostatAt.thermostat.ThermostatID[0]
             });
           });
@@ -196,67 +204,14 @@ var thermostat$ = function thermostat$(session$, period) {
 var withNewLogin$ = function withNewLogin$(e) {
   console.log(e);
   console.log('new login..');
-  return thermostat$(api.login$(Username, Password).retry().map(function (body) {
+  var login = api.login$(Username, Password).retry().map(function (body) {
     console.log("logged in: " + body.AuthenticateLoginResult.SessionID[0]);
     return body.AuthenticateLoginResult.SessionID[0];
-  }), 1000 * 10)['catch'](withNewLogin$);
+  });
+  return thermostat$(login, 1000 * 10)['catch'](withNewLogin$);
 };
 
-var data$ = thermostat$(Observable.of(Session), 1000 * 10)['catch'](withNewLogin$) //.
-; //share();
-
-/*
-let update$ = new Rx.Subject();
-
-let state$ = Observable.fromArray([{update: () => { return {thermostats: {}};}}]).
-  merge(update$).
-  scan((state, updater) => {
-    return updater.update(state);
-  }, {}).
-  replay(1).
-  refCount();
-
-data$.
-  combineLatest(state$, (thermostatAt, state) => {
-    if (!state || !state.thermostats || !!state.thermostats[thermostatAt.location.LocationID]) {
-      return Observable.empty();
-    }
-
-    let path = [
-      thermostatAt.location.LocationID,
-      thermostatAt.thermostat.ThermostatID,
-      'DispTemperature'
-    ];
-    let topic_name = path.join('-');
-
-    return createTopicIfNotExists$(topic_name, topicOptions).
-      map(() => { 
-        return {
-          update: (state) => {
-            let t = state.thermostats['' + thermostatAt.location.LocationID] || {
-              topics: {}
-            };
-            state.thermostats['' + thermostatAt.location.LocationID] = t;
-            t.topics['' + thermostatAt.thermostat.ThermostatID] = {
-              topic_name: topic_name,
-              value: path[2]
-            };
-            return state;
-          }
-        };
-      });
-  }).
-  mergeAll().
-  subscribe(update$);
-*/
-//kirkshooptherm
-//thermostathub
-//VcWce5Z18YfDhpw+IYwHnZ1UrpNz2WsCu3NMJvL+sJ4=
-//Endpoint=sb://kirkshooptherm.servicebus.windows.net/;SharedAccessKeyName=Redlink;SharedAccessKey=VcWce5Z18YfDhpw+IYwHnZ1UrpNz2WsCu3NMJvL+sJ4=
-
-data$.
-//  withLatestFrom(state$, (thermostatAt, state) => {
-tap(function (thermostatAt) {
+thermostat$(Observable.of(Session), 1000 * 10)['catch'](withNewLogin$).subscribe(function (thermostatAt) {
   var location = thermostatAt.location;
   console.log(location.CurrentWeather[0]);
   var thermostat = thermostatAt.thermostat;
@@ -264,37 +219,8 @@ tap(function (thermostatAt) {
   var Unit = UI.DisplayedUnits[0];
 
   console.log('Now: ' + new Date().toGMTString() + ', At: ' + UI.Created[0] + ', Outside - ' + location.Name[0] + ': ' + Number(UI.OutdoorTemp[0]) + Unit + ', Inside - ' + thermostat.UserDefinedDeviceName[0] + ': ' + Number(UI.DispTemperature[0]) + Unit);
-
-  /*
-      let thermstate = state.thermostats['' + thermostatAt.location.LocationID];
-      if (!!thermstate) {
-        for (var key in thermstate.topics) {
-          if (thermstate.topics.hasOwnProperty(key)) {
-            var element = thermstate.topics[key];
-            sendTopicMessage$(element.topic_name, { body: UI[element.value][0] }).subscribe(() => {console.log('UI sent');});
-          }
-        }
-      }
-  */
-}).subscribe(function () {}, function (error) {
+}, function (error) {
   console.log("failed - " + error);
 });
 
-/*
-createTopicIfNotExists('InsideTemperature', topicOptions).
-  subscribe(function(){
-    // topic was created or exists
-    console.log("InsideTemperature topic is live");
-  },function(error){
-    console.log("InsideTemperature topic is offline - " + error);
-  });
-*/
-
-/*
-serviceBusService.sendTopicMessage(topic, message, function(error) {
-  if (error) {
-    console.log(error);
-  }
-});
-*/
 //# sourceMappingURL=server.js.map
