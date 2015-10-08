@@ -24,9 +24,9 @@ var _superagentXml2jsparser2 = _interopRequireDefault(_superagentXml2jsparser);
 
 //require('superagent-proxy')(superagent);
 
-var _eventhubsJs = require('eventhubs-js');
+var _extEventhubsJs = require('./ext/eventhubs-js');
 
-var _eventhubsJs2 = _interopRequireDefault(_eventhubsJs);
+var _extEventhubsJs2 = _interopRequireDefault(_extEventhubsJs);
 
 var _http = require('http');
 
@@ -108,7 +108,7 @@ function createSharedAccessToken(namespace, hubName, saName, saKey) {
 
 var eventHubSasToken = createSharedAccessToken(eventHubNamespace, eventHubName, eventHubPolicyName, eventHubPolicyKey);
 
-_eventhubsJs2['default'].init({
+_extEventhubsJs2['default'].init({
   hubNamespace: eventHubNamespace,
   hubName: eventHubName,
   sasToken: eventHubSasToken
@@ -190,7 +190,7 @@ var thermostat$ = function thermostat$(session$, period) {
               fanPosition: Fan.Position[0],
               fanIsRunning: Fan.IsFanRunning[0]['$']['xsi:nil'] === "true"
             };
-            _eventhubsJs2['default'].sendMessage({
+            _extEventhubsJs2['default'].sendMessage({
               message: message,
               deviceId: thermostatAt.thermostat.ThermostatID[0]
             });

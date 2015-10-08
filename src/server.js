@@ -5,7 +5,7 @@ import superagent from 'superagent';
 import xmlparser from 'superagent-xml2jsparser';
 //require('superagent-proxy')(superagent);
 
-import eventHubs from 'eventhubs-js';
+import eventHubs from './ext/eventhubs-js';
 
 import http from 'http';
 
